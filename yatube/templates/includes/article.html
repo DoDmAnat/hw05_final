@@ -1,0 +1,22 @@
+{% load thumbnail %}
+<ul>
+  <li>Автор: <a href="{% url 'posts:profile' post.author.username %}">{{ post.author.get_full_name }}</a></li>
+  <li>Дата публикации: {{ post.pub_date|date:'d E Y' }}</li>
+  {% if post.group %}
+    <li>Группа: {{ post.group }}</li>
+  {% endif %}
+</ul>
+{% thumbnail post.image "600x339" crop="" upscale=True as im %}
+  <img class="card-img my-2" src="{{ im.url }}">
+{% endthumbnail %}
+<p>{{ post.text }}</p>
+<h6><a href="{% url 'posts:post_detail' post.pk %}">Подробная информация</a></h6>
+<br>
+  {% if post.group %}
+    <a href="{% url 'posts:group_list' post.group.slug %}"
+       class="btn btn-primary">Все записи группы</a>
+  {% endif %}
+  {% if user == post.author %}
+    <a class="btn btn-primary" href="{% url 'posts:post_edit' post.pk %}">Редактировать запись</a>
+  {% endif %}
+</br>

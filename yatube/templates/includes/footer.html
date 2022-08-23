@@ -1,0 +1,9 @@
+{% load static %}
+<footer class="border-top text-center py-3">
+  <p>
+    © {{ year }} Copyright <span style="color:rgb(228, 26, 42)">Ya</span>tube
+  </p>
+  <a class="author_page" href="{% url 'about:author_page' %}">
+    <img src="{% static 'img/fav/face_author.jpg' %}" width="20" height="20" class="d-inline-block align-top" alt="">
+    <a/>
+</footer>

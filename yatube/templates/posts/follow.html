@@ -6,6 +6,7 @@
   <div class="container py-5">
     <h1>Моя лента</h1>
   <hr>
+    {% include 'includes/switcher.html' %}
     {% for post in page_obj %}
       {% include 'includes/article.html' %}
       {% if not forloop.last %}

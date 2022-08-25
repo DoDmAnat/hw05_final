@@ -63,8 +63,6 @@ class Comment(models.Model):
                                    auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Комментарий'
-        verbose_name_plural = 'Комментарии'
         ordering = ['-created']
 
     def __str__(self):
@@ -73,9 +71,9 @@ class Comment(models.Model):
 
 class Follow(models.Model):
     user = models.ForeignKey(User,
-                               on_delete=models.CASCADE,
-                               related_name='follower',
-                               )
+                             on_delete=models.CASCADE,
+                             related_name='follower',
+                             )
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
                                related_name='following',

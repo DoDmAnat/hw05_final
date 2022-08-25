@@ -2,8 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-
-from ..models import Group, Post
+from django.core.cache import cache
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 count_posts_for_tests: int = 13
@@ -31,6 +31,7 @@ class PostsPagesTests(TestCase):
         })
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -39,17 +40,17 @@ class PostsPagesTests(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         templates_pages_names = {
             reverse('posts:index'):
-            'posts/index.html',
+                'posts/index.html',
             reverse('posts:group_list', kwargs={'slug': 'test-slug'}):
-            ('posts/group_list.html'),
+                ('posts/group_list.html'),
             reverse('posts:profile', kwargs={'username': self.user.username}):
-            ('posts/profile.html'),
+                ('posts/profile.html'),
             reverse('posts:post_detail', kwargs={'post_id': self.post.pk}):
-            ('posts/post_detail.html'),
+                ('posts/post_detail.html'),
             reverse('posts:post_edit', kwargs={'pk': self.post.pk}):
-            ('posts/create_post.html'),
+                ('posts/create_post.html'),
             reverse('posts:post_create'):
-            'posts/create_post.html',
+                'posts/create_post.html',
         }
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
@@ -57,6 +58,7 @@ class PostsPagesTests(TestCase):
                 self.assertTemplateUsed(response, template)
                 if reverse_name not in ('/create/',
                                         f'/posts/{self.post.pk}/edit/'):
+                    cache.clear()
                     response = self.guest_client.get(reverse_name)
                     self.assertTemplateUsed(response, template)
 
@@ -130,6 +132,23 @@ class PostsPagesTests(TestCase):
         post_id = response.context['post'].pk
         self.assertEqual(post_id, self.post.pk)
 
+    def test_index_cache(self):
+        """Проверка кеширования главной страницы"""
+        self.post = Post.objects.create(
+            text="Текста поста для теста кеша",
+            author=self.user,
+        )
+        response = self.authorized_client.get(reverse('posts:index'))
+        self.check_context_page_or_post(context=response.context)
+        Post.objects.filter(id=self.post.pk).delete()
+        cached_response = self.authorized_client.get(reverse('posts:index'))
+        self.assertEqual(response.content, cached_response.content)
+        cache.clear()
+        after_clear_response = self.authorized_client.get(
+            reverse('posts:index'))
+        self.assertNotEqual(cached_response.content,
+                            after_clear_response.content)
+
 
 class PaginatorViewsTest(TestCase):
 
@@ -153,14 +172,15 @@ class PaginatorViewsTest(TestCase):
         Post.objects.bulk_create(cls.posts)
         cls.names_pages = {
             reverse('posts:index'):
-            'index',
+                'index',
             reverse('posts:group_list', kwargs={'slug': cls.group.slug}):
-            ('group_list'),
+                ('group_list'),
             reverse('posts:profile', kwargs={'username': cls.user}):
-            ('profile'),
+                ('profile'),
         }
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -175,6 +195,53 @@ class PaginatorViewsTest(TestCase):
     def test_second_page_contains_three_records(self):
         """Тест паджинатора второй страницы"""
         for reverse_name, _ in self.names_pages.items():
+            cache.clear()
             with self.subTest(reverse_name=reverse_name):
-                response = self.client.get(reverse('posts:index') + '?page=2')
+                response = self.client.get(
+                    reverse('posts:index') + '?page=2')
                 self.assertEqual(len(response.context['page_obj']), 3)
+
+
+class FollowTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.user = User.objects.create_user(username='tester')
+        cls.author = User.objects.create_user(username='author')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Тестовое описание',
+        )
+        cls.post = Post.objects.create(
+            author=cls.author,
+            text='Тестовый пост',
+            group=cls.group,
+        )
+
+    def setUp(self):
+        cache.clear()
+        self.guest_client = Client()
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+
+    def test_follow_system_authorized_user(self):
+        """Авторизованный пользователь может подписываться и отписываться"""
+
+        following_count = Follow.objects.count()
+        response = self.authorized_client.get(
+            reverse('posts:profile_follow', kwargs={'username': self.author}))
+        self.assertRedirects(
+            response,
+            reverse('posts:profile',
+                    kwargs={'username': self.author}))
+        self.assertEqual(Follow.objects.count(), following_count + 1)
+        response = self.authorized_client.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.author}))
+        self.assertRedirects(
+            response,
+            reverse('posts:profile',
+                    kwargs={'username': self.author}))
+        self.assertEqual(Follow.objects.count(), following_count)

@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
-
+from django.core.cache import cache
 from ..models import Group, Post
 
 User = get_user_model()
@@ -25,6 +25,7 @@ class PostsURLTests(TestCase):
         )
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -42,6 +43,7 @@ class PostsURLTests(TestCase):
                 response = self.guest_client.get(address)
                 self.assertTemplateUsed(response, template)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
+                cache.clear()
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
                 self.assertEqual(response.status_code, HTTPStatus.OK)

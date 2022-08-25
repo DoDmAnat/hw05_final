@@ -4,12 +4,13 @@ from django.views.decorators.cache import cache_page
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PostForm, CommentForm
-from .models import Group, Post, User
+from .models import Group, Post, User, Follow
 
 posts_per_page: int = 10
+cache_time: int = 20
 
 
-@cache_page(60 * 20, key_prefix='index')
+@cache_page(cache_time, key_prefix='index_page')
 def index(request):
     posts = Post.objects.select_related('author')
     paginator = Paginator(posts, posts_per_page)
@@ -44,7 +45,11 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     counter = author.posts.count()
-    context = {'page_obj': page_obj, 'author': author, 'counter': counter}
+    following = False
+    if author.following.exists():
+        following = True
+    context = {'page_obj': page_obj, 'author': author, 'counter': counter,
+               'following': following}
     return render(request, 'posts/profile.html', context)
 
 
@@ -100,18 +105,28 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    context = {}
+    posts = Post.objects.filter(
+        author__following__user=request.user)
+    paginator = Paginator(posts, posts_per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj}
     return render(request, 'posts/follow.html', context)
-
 
 
 @login_required
 def profile_follow(request, username):
-    # Подписаться на автора
-    pass
+    user = request.user
+    author = get_object_or_404(User, username=username)
+    if author != user and not author.following.exists():
+        Follow.objects.create(user=user, author=author)
+    return redirect('posts:profile', username=username)
 
 
 @login_required
 def profile_unfollow(request, username):
-    # Дизлайк, отписка
-    pass
+    user = request.user
+    author = get_object_or_404(User, username=username)
+    if author != user and author.following.exists():
+        Follow.objects.filter(author=author).delete()
+    return redirect('posts:profile', username=username)

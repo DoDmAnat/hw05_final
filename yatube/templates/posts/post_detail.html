@@ -35,8 +35,8 @@
         </ul>
       </aside>
       <article class="col-12 col-md-9">
-        {% thumbnail post.image "600x339" crop="" upscale=True as im %}
-          <img class="card-img my-2" src="{{ im.url }}">
+        {% thumbnail post.image "1280x720" crop="" upscale=True as im %}
+          <img class="card-img my-2" width="400" height="600" src="{{ im.url }}">
         {% endthumbnail %}
         <p>{{ post.text }}</p>
         {% if user == post.author %}

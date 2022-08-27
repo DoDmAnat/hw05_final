@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.core.cache import cache
+from http import HTTPStatus
 from ..models import Follow, Group, Post
 
 User = get_user_model()
@@ -42,22 +43,26 @@ class PostsPagesTests(TestCase):
             reverse('posts:index'):
                 'posts/index.html',
             reverse('posts:group_list', kwargs={'slug': 'test-slug'}):
-                ('posts/group_list.html'),
+                'posts/group_list.html',
             reverse('posts:profile', kwargs={'username': self.user.username}):
-                ('posts/profile.html'),
+                'posts/profile.html',
             reverse('posts:post_detail', kwargs={'post_id': self.post.pk}):
-                ('posts/post_detail.html'),
+                'posts/post_detail.html',
             reverse('posts:post_edit', kwargs={'pk': self.post.pk}):
-                ('posts/create_post.html'),
+                'posts/create_post.html',
             reverse('posts:post_create'):
                 'posts/create_post.html',
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}):
+                'posts/post_detail.html',
+            reverse('posts:follow_index'): 'posts/follow.html',
         }
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
                 if reverse_name not in ('/create/',
-                                        f'/posts/{self.post.pk}/edit/'):
+                                        f'/posts/{self.post.pk}/edit/',
+                                        '/follow/'):
                     cache.clear()
                     response = self.guest_client.get(reverse_name)
                     self.assertTemplateUsed(response, template)
@@ -244,4 +249,33 @@ class FollowTest(TestCase):
             response,
             reverse('posts:profile',
                     kwargs={'username': self.author}))
+        self.assertEqual(Follow.objects.count(), following_count)
+
+    def test_follow_system_unauthorized_user(self):
+        """Неавторизованный пользователь не может подписываться"""
+
+        following_count = Follow.objects.count()
+        response = self.guest_client.get(
+            reverse('posts:profile_follow', kwargs={'username': self.author}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Follow.objects.count(), following_count)
+        response = self.guest_client.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.author}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Follow.objects.count(), following_count)
+
+    def test_follow_system_author_user(self):
+        """Автор не может подписываться на самого себя"""
+
+        following_count = Follow.objects.count()
+        response = self.authorized_client.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.user}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Follow.objects.count(), following_count)
+        response = self.authorized_client.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.author}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(Follow.objects.count(), following_count)

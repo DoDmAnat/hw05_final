@@ -45,9 +45,7 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     counter = author.posts.count()
-    following = False
-    if author.following.exists():
-        following = True
+    following = author.following.exists()
     context = {'page_obj': page_obj, 'author': author, 'counter': counter,
                'following': following}
     return render(request, 'posts/profile.html', context)
@@ -118,7 +116,7 @@ def follow_index(request):
 def profile_follow(request, username):
     user = request.user
     author = get_object_or_404(User, username=username)
-    if author != user and not author.following.exists():
+    if author != user: #and not author.following.exists():
         Follow.objects.create(user=user, author=author)
     return redirect('posts:profile', username=username)
 

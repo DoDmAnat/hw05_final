@@ -127,6 +127,7 @@ class CommentCreateFormTests(TestCase):
         super().setUpClass()
 
         cls.user = User.objects.create_user(username='tester')
+        cls.author = User.objects.create_user(username='test_author')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -171,7 +172,7 @@ class CommentCreateFormTests(TestCase):
             ).exists())
 
     def test_create_comment_unauthorized_user(self):
-        """Невторизованный пользователь не может создать комментарий."""
+        """Неавторизованный пользователь не может создать комментарий."""
         comment_count = Comment.objects.count()
         response = self.guest_client.get(
             reverse('posts:add_comment', kwargs={'post_id': self.post.pk}))

@@ -134,7 +134,7 @@ class CommentCreateFormTests(TestCase):
             description='Тестовое описание',
         )
         cls.post = Post.objects.create(
-            author=cls.user,
+            author=cls.author,
             text='Тестовый пост',
             group=cls.group,
         )
@@ -150,6 +150,8 @@ class CommentCreateFormTests(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.author_client = Client()
+        self.author_client.force_login(self.author)
 
     def test_create_comment_authorized_user(self):
         """Авторизованный пользователь создает комментарий."""
@@ -178,3 +180,23 @@ class CommentCreateFormTests(TestCase):
             reverse('posts:add_comment', kwargs={'post_id': self.post.pk}))
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(Comment.objects.count(), comment_count)
+
+    def test_create_comment_author(self):
+        """Автор создает комментарий."""
+
+        comment_count = Comment.objects.count()
+        form_data = {
+            'text': 'Тестовый текст коммента2',
+        }
+        response = self.author_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}),
+            data=form_data,
+            follow=True)
+        self.assertRedirects(
+            response,
+            reverse('posts:post_detail', kwargs={'post_id': self.post.pk}))
+        self.assertEqual(Comment.objects.count(), comment_count + 1)
+        self.assertTrue(
+            Comment.objects.filter(
+                text=form_data['text'],
+            ).exists())

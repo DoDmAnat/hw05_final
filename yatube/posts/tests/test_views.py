@@ -52,8 +52,6 @@ class PostsPagesTests(TestCase):
                 'posts/create_post.html',
             reverse('posts:post_create'):
                 'posts/create_post.html',
-            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}):
-                'posts/post_detail.html',
             reverse('posts:follow_index'): 'posts/follow.html',
         }
         for reverse_name, template in templates_pages_names.items():

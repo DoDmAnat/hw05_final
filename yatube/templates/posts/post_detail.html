@@ -38,7 +38,7 @@
         {% thumbnail post.image "1280x720" crop="" upscale=True as im %}
           <img class="card-img my-2" width="400" height="600" src="{{ im.url }}">
         {% endthumbnail %}
-        <p>{{ post.text }}</p>
+        <p align="justify">{{ post.text }}</p>
         {% if user == post.author %}
           <a class="btn btn-primary" href="{% url 'posts:post_edit' post.pk %}">
             редактировать запись

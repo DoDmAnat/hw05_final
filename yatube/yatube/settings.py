@@ -29,6 +29,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
     'testserver',
+    'www.dodmanat.pythonanywhere.com',
+    'dodmanat.pythonanywhere.com',
 ]
 
 # Application definition

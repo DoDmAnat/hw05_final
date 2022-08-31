@@ -20,15 +20,15 @@
 </p>
 <div class="text-muted">
   <small>{{ post.pub_date|date:'d E Y' }}</small>
-  <button type="button" class="btn btn-outline-secondary btn-sm" style="float:center;">
+  <button type="button" class="btn btn-outline-secondary btn-sm" style="float: none">
     <a class="nav-link" href="{% url "posts:post_detail" post.id %}">
       Открыть запись
     </a>
   </button>
   {% if post.group %}
-    <button type="button" class="btn btn-outline-secondary btn-sm" style="float:center;">
+    <button type="button" class="btn btn-outline-secondary btn-sm" style="float: none">
       <a class="nav-link" href="{% url 'posts:group_list' post.group.slug %}">
-        Все записи группы
+        Записи группы
       </a>
     </button>
   {% endif %}

@@ -32,7 +32,6 @@
       }
 
       body {
-          margin: 0;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
           font-size: 1rem;
           font-weight: 400;
@@ -40,7 +39,16 @@
           color: #212529;
           text-align: left;
           background-color: #fff;
-          padding-top: 1rem;
+      }
+
+      .navbar {
+          position: relative;
+          border: 0px solid transparent;
+          background-color: #fff;
+      }
+
+      .navbar a {
+          color: #000000;
       }
 
       /* social links */
@@ -103,7 +111,7 @@
     {% block title %} Что у вас здесь происходит? {% endblock %}
   </title>
 </head>
-<body style="background-color: #edeef0; padding-top: 50px;">
+<body style="background-color: #edeef0;">
 <header>
   {% include 'includes/header.html' %}
 </header>
